@@ -381,6 +381,47 @@ body{background:var(--negro);font-family:'DM Sans',sans-serif;color:var(--blanco
 
 <script>
 // ══════════════════════════════════════════
+//  GOOGLE SHEETS
+// ══════════════════════════════════════════
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyhrHdxeZ43O2-F00sO6PPBUdswNveQiSq_VdU4GgYQvrxWB0al4Gy-IQFsCMYM3F8-Zg/exec';
+
+function syncToSheets(payload){
+  if(!SHEETS_URL) return;
+  fetch(SHEETS_URL, {
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).catch(e=>console.warn('Sheets sync error:',e));
+}
+
+async function syncDesdeSheets(){
+  const btn=document.getElementById('btn-sync');
+  const status=document.getElementById('sync-status');
+  btn.textContent='⏳ Sincronizando...'; btn.disabled=true; status.innerHTML='';
+  try {
+    const resp = await fetch(SHEETS_URL,{method:'GET'});
+    const remoto = await resp.json();
+    if(!remoto.ok) throw new Error(remoto.error||'Error del servidor');
+    for(const [mk, md] of Object.entries(remoto.data||{})){
+      if(!data[mk]) data[mk]={ingresos:{},egresos:[]};
+      Object.assign(data[mk].ingresos, md.ingresos||{});
+      const existIds = new Set(data[mk].egresos.map(e=>e.id));
+      for(const eg of (md.egresos||[])) if(!existIds.has(eg.id)) data[mk].egresos.push(eg);
+    }
+    guardarDatos(); renderAll(); actualizarStatsDatos();
+    const meses = Object.keys(remoto.data||{}).length;
+    status.innerHTML=`<div style="background:#0a2e1a;border:1px solid #1a4a2a;border-radius:8px;padding:12px;margin-top:12px;font-size:.82rem;color:#4caf50;">✅ Sincronización exitosa — ${meses} mes(es) importados</div>`;
+    toast('✅ Datos sincronizados desde Sheets');
+  } catch(e){
+    status.innerHTML=`<div style="background:#2a0a0a;border:1px solid #3a1010;border-radius:8px;padding:12px;margin-top:12px;font-size:.82rem;color:var(--rojo);">⚠️ Error: ${e.message}</div>`;
+    toast('⚠️ Error al sincronizar');
+  } finally {
+    btn.textContent='⬇️ SINCRONIZAR DESDE SHEETS'; btn.disabled=false;
+  }
+}
+
+// ══════════════════════════════════════════
 //  ESTADO
 // ══════════════════════════════════════════
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -656,52 +697,6 @@ function eliminarEgreso(id){
   guardarDatos();
   toast('🗑 Egreso eliminado');
   renderAll();
-}
-
-// ══════════════════════════════════════════
-//  GOOGLE SHEETS
-// ══════════════════════════════════════════
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyhrHdxeZ43O2-F00sO6PPBUdswNveQiSq_VdU4GgYQvrxWB0al4Gy-IQFsCMYM3F8-Zg/exec';
-
-async function syncToSheets(payload){
-  if(!SHEETS_URL || SHEETS_URL.includes('TU_URL')) return;
-  try {
-    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  } catch(e){ console.warn('Sheets sync error:',e); }
-}
-
-async function syncDesdeSheets(){
-  if(!SHEETS_URL || SHEETS_URL.includes('TU_URL')){ toast('⚠️ Configura la URL de Google Sheets'); return; }
-  const btn=document.getElementById('btn-sync');
-  const status=document.getElementById('sync-status');
-  btn.textContent='⏳ Sincronizando...'; btn.disabled=true; status.innerHTML='';
-  try {
-    const resp = await fetch(SHEETS_URL,{method:'GET'});
-    const remoto = await resp.json();
-    if(!remoto.ok) throw new Error(remoto.error||'Error del servidor');
-
-    // Fusionar ingresos
-    for(const [mk, md] of Object.entries(remoto.data||{})){
-      if(!data[mk]) data[mk]={ingresos:{},egresos:[]};
-      Object.assign(data[mk].ingresos, md.ingresos||{});
-      // Fusionar egresos por id
-      const existIds = new Set(data[mk].egresos.map(e=>e.id));
-      for(const eg of (md.egresos||[])){
-        if(!existIds.has(eg.id)) data[mk].egresos.push(eg);
-      }
-    }
-    guardarDatos();
-    renderAll();
-    actualizarStatsDatos();
-    const meses = Object.keys(remoto.data||{}).length;
-    status.innerHTML=`<div style="background:#0a2e1a;border:1px solid #1a4a2a;border-radius:8px;padding:12px;margin-top:12px;font-size:.82rem;color:#4caf50;">✅ Sincronización exitosa — ${meses} mes(es) importados</div>`;
-    toast('✅ Datos sincronizados desde Sheets');
-  } catch(e){
-    status.innerHTML=`<div style="background:#2a0a0a;border:1px solid #3a1010;border-radius:8px;padding:12px;margin-top:12px;font-size:.82rem;color:var(--rojo);">⚠️ Error: ${e.message}</div>`;
-    toast('⚠️ Error al sincronizar');
-  } finally {
-    btn.textContent='⬇️ SINCRONIZAR DESDE SHEETS'; btn.disabled=false;
-  }
 }
 
 // ══════════════════════════════════════════
