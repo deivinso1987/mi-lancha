@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="MI LANCHA">
+<title>MI LANCHA – Control Mensual</title>
+
+<link rel="manifest" href="data:application/json,{%22name%22:%22MI%20LANCHA%22,%22short_name%22:%22MI%20LANCHA%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0a0a%22,%22theme_color%22:%22%230077b6%22}">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --negro:#0a0a0a;
+  --azul:#0077b6;
+  --azul-osc:#005f92;
+  --azul-claro:#00b4d8;
+  --gris1:#141414;
+  --gris2:#1c1c1c;
+  --gris3:#2a2a2a;
+  --gris4:#3a3a3a;
+  --grisT:#6b6b6b;
+  --blanco:#f5f5f0;
+  --verde:#25d366;
+  --verde-osc:#1aab52;
+  --rojo:#e8001d;
+  --naranja:#ff9800;
+  --amarillo:#f5a623;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--negro);font-family:'DM Sans',sans-serif;color:var(--blanco);display:flex;flex-direction:column;}
+
+/* NAV */
+.nav{background:var(--gris1);border-bottom:1px solid #222;display:flex;align-items:center;padding:0 16px;height:56px;flex-shrink:0;gap:8px;position:relative;z-index:100;}
+.nav-logo{display:flex;align-items:center;gap:10px;flex:1;}
+.logo-wrap{width:36px;height:36px;background:var(--azul);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;}
+.nav-brand{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.12em;color:var(--blanco);}
+.nav-brand span{color:var(--azul-claro);}
+.nav-tabs{display:flex;gap:2px;}
+.nav-tab{background:none;border:none;color:var(--grisT);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.nav-tab.active{background:var(--azul);color:#fff;}
+.nav-tab:hover:not(.active){background:var(--gris3);color:var(--blanco);}
+
+/* PAGES */
+.page{display:none;flex:1;overflow-y:auto;padding:16px 16px 40px;}
+.page.active{display:block;}
+
+/* CARDS */
+.card{background:var(--gris2);border:1px solid #252525;border-radius:12px;padding:18px;margin-bottom:14px;}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;color:var(--grisT);margin-bottom:14px;text-transform:uppercase;}
+
+/* STATS */
+.stats3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.stats2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-card{background:var(--gris2);border:1px solid #252525;border-radius:10px;padding:12px 14px;}
+.stat-label{font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--grisT);margin-bottom:4px;}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--blanco);line-height:1;}
+.stat-value.azul{color:var(--azul-claro);}
+.stat-value.rojo{color:var(--rojo);}
+.stat-value.verde{color:var(--verde);}
+.stat-value.naranja{color:var(--naranja);}
+
+/* FORMS */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.fg label{font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--grisT);}
+.fg input,.fg select{background:var(--negro);border:1px solid #2e2e2e;border-radius:7px;padding:10px 13px;color:var(--blanco);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;transition:border-color .2s;width:100%;}
+.fg input:focus,.fg select:focus{border-color:var(--azul);}
+.fg input::placeholder{color:#3a3a3a;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* BUTTONS */
+.btn{width:100%;border:none;border-radius:8px;padding:13px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn:active{transform:scale(.98);}
+.btn-blue{background:var(--azul);color:#fff;}
+.btn-blue:hover{background:var(--azul-osc);}
+.btn-dark{background:var(--gris3);color:var(--blanco);}
+.btn-dark:hover{background:var(--gris4);}
+.btn-red{background:var(--rojo);color:#fff;}
+.gap-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+
+/* CALENDAR */
+.mes-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.mes-nav button{background:var(--gris3);border:none;color:var(--blanco);width:34px;height:34px;border-radius:8px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.mes-nav button:hover{background:var(--azul);}
+.mes-titulo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.1em;color:var(--azul-claro);}
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+.cal-dh{text-align:center;font-size:.6rem;font-weight:700;color:var(--grisT);padding:4px 0;letter-spacing:.06em;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-day{background:var(--gris2);border:1px solid #252525;border-radius:7px;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all .15s;padding:4px 2px;}
+.cal-day:hover{border-color:var(--azul);}
+.cal-day.hoy{border-color:var(--azul);border-width:2px;}
+.cal-day.tiene{background:linear-gradient(135deg,#003d5c,#005f92);}
+.cal-day.seleccionado{background:var(--azul);border-color:var(--azul-claro);}
+.cal-day.vacio{background:transparent;border-color:transparent;cursor:default;}
+.cal-dn{font-size:.78rem;color:var(--blanco);}
+.cal-day.hoy .cal-dn{font-weight:700;color:var(--azul-claro);}
+.cal-day.seleccionado .cal-dn{color:#fff;font-weight:700;}
+.cal-val{font-size:.55rem;color:var(--azul-claro);font-weight:600;font-family:'DM Mono',monospace;line-height:1;}
+.cal-day.seleccionado .cal-val{color:#cef;}
+
+/* INPUT DIA PANEL */
+.dia-panel{background:var(--gris1);border:1px solid var(--azul);border-radius:10px;padding:14px;margin-bottom:14px;display:none;}
+.dia-panel.open{display:block;}
+.dia-panel-title{font-family:'Bebas Neue',sans-serif;font-size:.95rem;letter-spacing:.1em;color:var(--azul-claro);margin-bottom:10px;}
+
+/* LISTA REGISTROS */
+.reg-item{background:var(--gris2);border:1px solid #252525;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;transition:border-color .2s;}
+.reg-item:hover{border-color:var(--azul);}
+.reg-dia{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--azul-claro);width:32px;flex-shrink:0;}
+.reg-info{flex:1;}
+.reg-val{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--azul-claro);}
+.reg-del{background:none;border:none;color:var(--grisT);font-size:1rem;cursor:pointer;padding:4px;transition:color .2s;}
+.reg-del:hover{color:var(--rojo);}
+
+/* EGRESO ITEM */
+.eg-item{background:var(--gris2);border:1px solid #252525;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.eg-desc{font-size:.88rem;color:var(--blanco);}
+.eg-val{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--naranja);white-space:nowrap;}
+.eg-del{background:none;border:none;color:var(--grisT);font-size:1rem;cursor:pointer;padding:4px;transition:color .2s;}
+.eg-del:hover{color:var(--rojo);}
+
+/* BALANCE CARD */
+.balance-card{background:linear-gradient(135deg,#001f3f,#003d5c);border:1px solid var(--azul);border-radius:12px;padding:18px;margin-bottom:14px;}
+.balance-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.balance-label{font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7ec8e3;}
+.balance-val{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;}
+
+/* EMPTY */
+.empty{text-align:center;color:var(--grisT);font-size:.85rem;padding:30px 0;}
+.empty-icon{font-size:2rem;margin-bottom:8px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--gris3);color:var(--blanco);padding:10px 20px;border-radius:8px;font-size:.85rem;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;}
+#toast.show{opacity:1;}
+
+/* TOTAL ROW */
+.total-row{background:var(--gris3);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+.total-label{font-size:.8rem;font-weight:600;color:var(--grisT);}
+.total-val{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="logo-wrap">⛵</div>
+    <div class="nav-brand">MI <span>LANCHA</span></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('ingresos',this)">💰 Ingresos</button>
+    <button class="nav-tab" onclick="showPage('egresos',this)">📤 Egresos</button>
+    <button class="nav-tab" onclick="showPage('resumen',this)">📊 Resumen</button>
+  </div>
+</nav>
+
+<!-- ══ PAGE: INGRESOS ══ -->
+<div class="page active" id="page-ingresos">
+
+  <!-- Mes nav -->
+  <div class="mes-nav" style="margin-top:4px;">
+    <button onclick="cambiarMes(-1)">‹</button>
+    <div class="mes-titulo" id="mes-titulo-ing"></div>
+    <button onclick="cambiarMes(1)">›</button>
+  </div>
+
+  <!-- Stats rápidas -->
+  <div class="stats3">
+    <div class="stat-card">
+      <div class="stat-label">Días</div>
+      <div class="stat-value azul" id="ing-dias">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total</div>
+      <div class="stat-value azul" id="ing-total-top">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Promedio</div>
+      <div class="stat-value" id="ing-prom">$0</div>
+    </div>
+  </div>
+
+  <!-- Panel ingreso día -->
+  <div class="dia-panel" id="dia-panel">
+    <div class="dia-panel-title" id="dia-panel-title">Día —</div>
+    <div class="row2">
+      <div class="fg" style="margin-bottom:0">
+        <label>Ingreso del día $</label>
+        <input type="number" id="dia-input" placeholder="0" onkeydown="if(event.key==='Enter')guardarDia()">
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-end;">
+        <button class="btn btn-blue" style="flex:1;padding:10px;" onclick="guardarDia()">✓ OK</button>
+        <button class="btn btn-dark" style="width:auto;padding:10px 12px;" onclick="cerrarDiaPanel()">✕</button>
+      </div>
+    </div>
+    <div style="margin-top:8px;">
+      <button id="btn-del-dia" class="btn btn-red" style="display:none;padding:9px;" onclick="eliminarDia()">🗑 Eliminar registro</button>
+    </div>
+  </div>
+
+  <!-- Calendario -->
+  <div class="card" style="padding:14px;">
+    <div class="cal-head" id="cal-head"></div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <!-- Lista días -->
+  <div id="lista-ingresos"></div>
+</div>
+
+<!-- ══ PAGE: EGRESOS ══ -->
+<div class="page" id="page-egresos">
+
+  <div class="mes-nav" style="margin-top:4px;">
+    <button onclick="cambiarMes(-1)">‹</button>
+    <div class="mes-titulo" id="mes-titulo-eg"></div>
+    <button onclick="cambiarMes(1)">›</button>
+  </div>
+
+  <!-- Agregar egreso -->
+  <div class="card">
+    <div class="card-title">+ Nuevo Egreso</div>
+    <div class="fg">
+      <label>Descripción</label>
+      <input type="text" id="eg-desc" placeholder="Combustible, mantenimiento...">
+    </div>
+    <div class="fg">
+      <label>Valor $</label>
+      <input type="number" id="eg-val" placeholder="0" onkeydown="if(event.key==='Enter')agregarEgreso()">
+    </div>
+    <button class="btn btn-blue" onclick="agregarEgreso()">⛽ Registrar Egreso</button>
+  </div>
+
+  <!-- Lista egresos -->
+  <div id="lista-egresos"></div>
+</div>
+
+<!-- ══ PAGE: RESUMEN ══ -->
+<div class="page" id="page-resumen">
+
+  <div class="mes-nav" style="margin-top:4px;">
+    <button onclick="cambiarMes(-1)">‹</button>
+    <div class="mes-titulo" id="mes-titulo-res"></div>
+    <button onclick="cambiarMes(1)">›</button>
+  </div>
+
+  <!-- Balance -->
+  <div class="balance-card">
+    <div class="balance-row">
+      <span class="balance-label">💰 Ingresos</span>
+      <span class="balance-val azul" id="res-ingresos" style="color:var(--azul-claro)">$0</span>
+    </div>
+    <div class="balance-row">
+      <span class="balance-label">📤 Egresos</span>
+      <span class="balance-val" id="res-egresos" style="color:var(--naranja)">$0</span>
+    </div>
+    <div style="border-top:1px solid rgba(0,180,216,.2);margin:8px 0;"></div>
+    <div class="balance-row" style="margin-bottom:0">
+      <span class="balance-label">📊 Balance neto</span>
+      <span class="balance-val" id="res-balance">$0</span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats2">
+    <div class="stat-card">
+      <div class="stat-label">Días trabajados</div>
+      <div class="stat-value azul" id="res-dias">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Promedio/día</div>
+      <div class="stat-value" id="res-prom">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Mayor ingreso</div>
+      <div class="stat-value verde" id="res-max">$0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Gastos registrados</div>
+      <div class="stat-value naranja" id="res-neg" style="color:var(--naranja)">0</div>
+    </div>
+  </div>
+
+  <!-- Desglose -->
+  <div class="card">
+    <div class="card-title">Desglose de egresos</div>
+    <div id="res-eg-lista"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Ingresos por día</div>
+    <div id="res-ing-lista"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_SEMANA = ['D','L','M','M','J','V','S'];
+const KEY = 'mi_lancha_v1';
+
+let hoy = new Date();
+let anio = hoy.getFullYear();
+let mes  = hoy.getMonth();
+let diaSeleccionado = null;
+let data = {};
+
+function cargarDatos(){
+  try{ const r=localStorage.getItem(KEY); if(r) data=JSON.parse(r); }catch{}
+}
+function guardarDatos(){
+  try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch{}
+}
+
+function mesKey(){ return `${anio}-${String(mes+1).padStart(2,'0')}`; }
+function getMesData(){
+  if(!data[mesKey()]) data[mesKey()]={ingresos:{},egresos:[]};
+  return data[mesKey()];
+}
+
+// ══════════════════════════════════════════
+//  NAVEGACIÓN
+// ══════════════════════════════════════════
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  renderAll();
+}
+
+function cambiarMes(dir){
+  mes += dir;
+  if(mes>11){mes=0;anio++;}
+  if(mes<0){mes=11;anio--;}
+  diaSeleccionado=null;
+  cerrarDiaPanel();
+  renderAll();
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function renderAll(){
+  const titulo = `${MESES[mes]} ${anio}`;
+  ['ing','eg','res'].forEach(id=>{
+    const el=document.getElementById(`mes-titulo-${id}`);
+    if(el) el.textContent=titulo;
+  });
+  renderCalendario();
+  renderListaIngresos();
+  renderListaEgresos();
+  renderResumen();
+  updateStatsTop();
+}
+
+function fmt(n){
+  return '$'+Math.round(n||0).toLocaleString('es-CO');
+}
+
+function renderCalendario(){
+  const md = getMesData();
+  const grid = document.getElementById('cal-grid');
+  const head = document.getElementById('cal-head');
+  if(!grid) return;
+
+  // Encabezados
+  head.innerHTML = DIAS_SEMANA.map(d=>`<div class="cal-dh">${d}</div>`).join('');
+
+  const diasEnMes = new Date(anio, mes+1, 0).getDate();
+  const primerDia = new Date(anio, mes, 1).getDay();
+
+  let html = '';
+  for(let i=0;i<primerDia;i++) html+=`<div class="cal-day vacio"></div>`;
+
+  for(let d=1;d<=diasEnMes;d++){
+    const val = md.ingresos[String(d)];
+    const tieneVal = val !== undefined;
+    const esHoy = d===hoy.getDate()&&mes===hoy.getMonth()&&anio===hoy.getFullYear();
+    const esSel = d===diaSeleccionado;
+    let cls = 'cal-day';
+    if(tieneVal) cls+=' tiene';
+    if(esHoy) cls+=' hoy';
+    if(esSel) cls+=' seleccionado';
+    const valStr = tieneVal ? `<div class="cal-val">${fmt(val).replace('$','')}</div>` : '';
+    html+=`<div class="${cls}" onclick="abrirDia(${d})">
+      <div class="cal-dn">${d}</div>
+      ${valStr}
+    </div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function updateStatsTop(){
+  const md = getMesData();
+  const vals = Object.values(md.ingresos).map(v=>parseFloat(v)||0);
+  const total = vals.reduce((s,v)=>s+v,0);
+  const dias = vals.length;
+  const prom = dias>0?total/dias:0;
+  const el1=document.getElementById('ing-dias');
+  const el2=document.getElementById('ing-total-top');
+  const el3=document.getElementById('ing-prom');
+  if(el1) el1.textContent=dias;
+  if(el2) el2.textContent=fmt(total);
+  if(el3) el3.textContent=fmt(prom);
+}
+
+function renderListaIngresos(){
+  const md = getMesData();
+  const el = document.getElementById('lista-ingresos');
+  if(!el) return;
+  const entries = Object.entries(md.ingresos).sort((a,b)=>parseInt(a[0])-parseInt(b[0]));
+  if(entries.length===0){ el.innerHTML=`<div class="empty"><div class="empty-icon">📅</div>Toca un día del calendario<br>para registrar el ingreso</div>`; return; }
+  const total = entries.reduce((s,[,v])=>s+(parseFloat(v)||0),0);
+  let html = entries.map(([d,v])=>`
+    <div class="reg-item" onclick="abrirDia(${d})">
+      <div class="reg-dia">${d}</div>
+      <div class="reg-info"><div style="font-size:.75rem;color:var(--grisT);">${MESES[mes]}</div></div>
+      <div class="reg-val">${fmt(v)}</div>
+      <button class="reg-del" onclick="event.stopPropagation();eliminarDiaDirecto(${d})">🗑</button>
+    </div>`).join('');
+  html+=`<div class="total-row"><span class="total-label">Total ingresos</span><span class="total-val" style="color:var(--azul-claro)">${fmt(total)}</span></div>`;
+  el.innerHTML=html;
+}
+
+function renderListaEgresos(){
+  const md = getMesData();
+  const el = document.getElementById('lista-egresos');
+  if(!el) return;
+  if(md.egresos.length===0){ el.innerHTML=`<div class="empty"><div class="empty-icon">📤</div>Sin egresos en ${MESES[mes]}</div>`; return; }
+  const total = md.egresos.reduce((s,e)=>s+(parseFloat(e.valor)||0),0);
+  let html = md.egresos.map(e=>`
+    <div class="eg-item">
+      <div class="eg-desc">${e.desc}</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="eg-val">${fmt(e.valor)}</div>
+        <button class="eg-del" onclick="eliminarEgreso(${e.id})">🗑</button>
+      </div>
+    </div>`).join('');
+  html+=`<div class="total-row"><span class="total-label">Total egresos</span><span class="total-val" style="color:var(--naranja)">${fmt(total)}</span></div>`;
+  el.innerHTML=html;
+}
+
+function renderResumen(){
+  const md = getMesData();
+  const ingresos = Object.values(md.ingresos).map(v=>parseFloat(v)||0);
+  const totalIng = ingresos.reduce((s,v)=>s+v,0);
+  const totalEg  = md.egresos.reduce((s,e)=>s+(parseFloat(e.valor)||0),0);
+  const balance  = totalIng - totalEg;
+  const dias     = ingresos.length;
+  const prom     = dias>0?totalIng/dias:0;
+  const maxIng   = dias>0?Math.max(...ingresos):0;
+
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('res-ingresos',fmt(totalIng));
+  set('res-egresos',fmt(totalEg));
+  set('res-balance',fmt(balance));
+  set('res-dias',dias);
+  set('res-prom',fmt(prom));
+  set('res-max',fmt(maxIng));
+  set('res-neg',md.egresos.length);
+
+  const balEl=document.getElementById('res-balance');
+  if(balEl) balEl.style.color = balance>=0?'var(--verde)':'var(--rojo)';
+
+  // Egresos
+  const egEl=document.getElementById('res-eg-lista');
+  if(egEl){
+    if(md.egresos.length===0){ egEl.innerHTML=`<div class="empty" style="padding:14px 0">Sin egresos</div>`; }
+    else egEl.innerHTML=md.egresos.map(e=>`
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #252525;">
+        <span style="font-size:.85rem;color:var(--blanco)">${e.desc}</span>
+        <span style="font-family:'Bebas Neue';font-size:1rem;color:var(--naranja)">${fmt(e.valor)}</span>
+      </div>`).join('');
+  }
+
+  // Ingresos
+  const ingEl=document.getElementById('res-ing-lista');
+  if(ingEl){
+    const entries=Object.entries(md.ingresos).sort((a,b)=>parseInt(a[0])-parseInt(b[0]));
+    if(entries.length===0){ ingEl.innerHTML=`<div class="empty" style="padding:14px 0">Sin ingresos</div>`; }
+    else ingEl.innerHTML=entries.map(([d,v])=>`
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #252525;">
+        <span style="font-size:.85rem;color:var(--grisT)">Día ${d}</span>
+        <span style="font-family:'Bebas Neue';font-size:1rem;color:var(--azul-claro)">${fmt(v)}</span>
+      </div>`).join('');
+  }
+}
+
+// ══════════════════════════════════════════
+//  INGRESOS – DÍA
+// ══════════════════════════════════════════
+function abrirDia(d){
+  diaSeleccionado = d;
+  const md = getMesData();
+  const val = md.ingresos[String(d)];
+  const panel = document.getElementById('dia-panel');
+  document.getElementById('dia-panel-title').textContent = `Día ${d} de ${MESES[mes]}`;
+  document.getElementById('dia-input').value = val !== undefined ? val : '';
+  document.getElementById('btn-del-dia').style.display = val!==undefined?'flex':'none';
+  panel.classList.add('open');
+  document.getElementById('dia-input').focus();
+  renderCalendario();
+}
+
+function cerrarDiaPanel(){
+  diaSeleccionado=null;
+  document.getElementById('dia-panel').classList.remove('open');
+  renderCalendario();
+}
+
+function guardarDia(){
+  if(!diaSeleccionado) return;
+  const val = parseFloat(document.getElementById('dia-input').value);
+  if(isNaN(val)||val<0){ toast('⚠️ Ingresa un valor válido'); return; }
+  const md = getMesData();
+  md.ingresos[String(diaSeleccionado)] = val;
+  guardarDatos();
+  toast('✅ Ingreso guardado');
+  cerrarDiaPanel();
+  renderAll();
+}
+
+function eliminarDia(){
+  if(!diaSeleccionado) return;
+  const md = getMesData();
+  delete md.ingresos[String(diaSeleccionado)];
+  guardarDatos();
+  toast('🗑 Registro eliminado');
+  cerrarDiaPanel();
+  renderAll();
+}
+
+function eliminarDiaDirecto(d){
+  const md = getMesData();
+  delete md.ingresos[String(d)];
+  guardarDatos();
+  toast('🗑 Registro eliminado');
+  renderAll();
+}
+
+// ══════════════════════════════════════════
+//  EGRESOS
+// ══════════════════════════════════════════
+function agregarEgreso(){
+  const desc = document.getElementById('eg-desc').value.trim();
+  const val  = parseFloat(document.getElementById('eg-val').value);
+  if(!desc){ toast('⚠️ Escribe una descripción'); return; }
+  if(isNaN(val)||val<=0){ toast('⚠️ Ingresa un valor válido'); return; }
+  const md = getMesData();
+  md.egresos.push({desc, valor:val, id:Date.now()});
+  guardarDatos();
+  document.getElementById('eg-desc').value='';
+  document.getElementById('eg-val').value='';
+  toast('✅ Egreso registrado');
+  renderAll();
+}
+
+function eliminarEgreso(id){
+  const md = getMesData();
+  md.egresos = md.egresos.filter(e=>e.id!==id);
+  guardarDatos();
+  toast('🗑 Egreso eliminado');
+  renderAll();
+}
+
+// ══════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════
+let toastTimer;
+function toast(msg, dur=2000){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+window.addEventListener('load',()=>{
+  cargarDatos();
+  renderAll();
+});
+</script>
+</body>
+</html>
