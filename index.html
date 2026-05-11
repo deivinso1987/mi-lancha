@@ -410,16 +410,63 @@ function getMesData(){
 // ══════════════════════════════════════════
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzkja-4OtPc87XUH_WBED_mctL3_cMXu6vrHrlNqR3c9qIRYA5_O8MNm2AiGU33PmoWOg/exec';
 
+// Cola de envíos pendientes para no perder datos
+let _syncQueue = [];
+let _syncSending = false;
+
 function syncToSheets(payload){
+  _syncQueue.push(payload);
+  _procesarCola();
+}
+
+async function _procesarCola(){
+  if(_syncSending || _syncQueue.length === 0) return;
+  _syncSending = true;
+  const payload = _syncQueue[0];
   try {
-    const params = new URLSearchParams();
-    params.append('payload', JSON.stringify(payload));
-    fetch(SHEETS_URL, {
+    // Intentar con fetch normal primero (funciona en Chrome/Android)
+    const resp = await fetch(SHEETS_URL, {
       method: 'POST',
-      mode: 'no-cors',
-      body: params
-    }).catch(e => console.warn('Sheets:', e));
-  } catch(e){ console.warn('Sheets sync error:',e); }
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'payload=' + encodeURIComponent(JSON.stringify(payload))
+    });
+    if(resp.ok || resp.status === 0) {
+      _syncQueue.shift(); // éxito, quitar de la cola
+    }
+  } catch(e){
+    // Si falla (CORS en Safari), usar iframe como fallback
+    try { _enviarPorIframe(payload); _syncQueue.shift(); } catch(e2){}
+  }
+  _syncSending = false;
+  if(_syncQueue.length > 0) setTimeout(_procesarCola, 500);
+}
+
+function _enviarPorIframe(payload){
+  // Crear form + iframe oculto — bypasea CORS en Safari/iPhone PWA
+  const iframeId = 'sync-iframe-' + Date.now();
+  const iframe = document.createElement('iframe');
+  iframe.name = iframeId;
+  iframe.style.cssText = 'display:none;width:0;height:0;border:0;position:absolute;';
+  document.body.appendChild(iframe);
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = SHEETS_URL;
+  form.target = iframeId;
+  form.style.display = 'none';
+
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'payload';
+  input.value = JSON.stringify(payload);
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
+
+  // Limpiar después de 5s
+  setTimeout(()=>{ 
+    try{ document.body.removeChild(form); document.body.removeChild(iframe); }catch{} 
+  }, 5000);
 }
 
 async function syncDesdeSheets(){
