@@ -381,18 +381,45 @@ body{background:var(--negro);font-family:'DM Sans',sans-serif;color:var(--blanco
 
 <script>
 // ══════════════════════════════════════════
+//  ESTADO GLOBAL — debe ir primero
+// ══════════════════════════════════════════
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DIAS_SEMANA = ['D','L','M','M','J','V','S'];
+const KEY = 'mi_lancha_v1';
+
+let hoy = new Date();
+let anio = hoy.getFullYear();
+let mes  = hoy.getMonth();
+let diaSeleccionado = null;
+let appData = {};
+
+function cargarDatos(){
+  try{ const r=localStorage.getItem(KEY); if(r) appData=JSON.parse(r); }catch{}
+}
+function guardarDatos(){
+  try{ localStorage.setItem(KEY,JSON.stringify(appData)); }catch{}
+}
+function mesKey(){ return `${anio}-${String(mes+1).padStart(2,'0')}`; }
+function getMesData(){
+  if(!appData[mesKey()]) appData[mesKey()]={ingresos:{},egresos:[]};
+  return appData[mesKey()];
+}
+
+// ══════════════════════════════════════════
 //  GOOGLE SHEETS
 // ══════════════════════════════════════════
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzkja-4OtPc87XUH_WBED_mctL3_cMXu6vrHrlNqR3c9qIRYA5_O8MNm2AiGU33PmoWOg/exec';
 
 function syncToSheets(payload){
-  if(!SHEETS_URL) return;
-  fetch(SHEETS_URL, {
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)
-  }).catch(e=>console.warn('Sheets sync error:',e));
+  try {
+    const params = new URLSearchParams();
+    params.append('payload', JSON.stringify(payload));
+    fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: params
+    }).catch(e => console.warn('Sheets:', e));
+  } catch(e){ console.warn('Sheets sync error:',e); }
 }
 
 async function syncDesdeSheets(){
@@ -402,12 +429,12 @@ async function syncDesdeSheets(){
   try {
     const resp = await fetch(SHEETS_URL,{method:'GET'});
     const remoto = await resp.json();
-    if(!remoto.ok) throw new Error(remoto.error||'Error del servidor');
+    if(!remoto.ok) throw new Error(remoto.msg||'Error del servidor');
     for(const [mk, md] of Object.entries(remoto.data||{})){
-      if(!data[mk]) data[mk]={ingresos:{},egresos:[]};
-      Object.assign(data[mk].ingresos, md.ingresos||{});
-      const existIds = new Set(data[mk].egresos.map(e=>e.id));
-      for(const eg of (md.egresos||[])) if(!existIds.has(eg.id)) data[mk].egresos.push(eg);
+      if(!appData[mk]) appData[mk]={ingresos:{},egresos:[]};
+      Object.assign(appData[mk].ingresos, md.ingresos||{});
+      const existIds = new Set(appData[mk].egresos.map(e=>e.id));
+      for(const eg of (md.egresos||[])) if(!existIds.has(eg.id)) appData[mk].egresos.push(eg);
     }
     guardarDatos(); renderAll(); actualizarStatsDatos();
     const meses = Object.keys(remoto.data||{}).length;
@@ -419,32 +446,6 @@ async function syncDesdeSheets(){
   } finally {
     btn.textContent='⬇️ SINCRONIZAR DESDE SHEETS'; btn.disabled=false;
   }
-}
-
-// ══════════════════════════════════════════
-//  ESTADO
-// ══════════════════════════════════════════
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS_SEMANA = ['D','L','M','M','J','V','S'];
-const KEY = 'mi_lancha_v1';
-
-let hoy = new Date();
-let anio = hoy.getFullYear();
-let mes  = hoy.getMonth();
-let diaSeleccionado = null;
-let data = {};
-
-function cargarDatos(){
-  try{ const r=localStorage.getItem(KEY); if(r) data=JSON.parse(r); }catch{}
-}
-function guardarDatos(){
-  try{ localStorage.setItem(KEY,JSON.stringify(data)); }catch{}
-}
-
-function mesKey(){ return `${anio}-${String(mes+1).padStart(2,'0')}`; }
-function getMesData(){
-  if(!data[mesKey()]) data[mesKey()]={ingresos:{},egresos:[]};
-  return data[mesKey()];
 }
 
 // ══════════════════════════════════════════
@@ -740,13 +741,13 @@ function guardarEdicionEgreso(){
 // ══════════════════════════════════════════
 function exportarDatos(){
   try {
-    const payload={version:1,app:'mi-lancha',exportado:new Date().toISOString(),data};
+    const payload={version:1,app:'mi-lancha',exportado:new Date().toISOString(),data:appData};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url; a.download=`milancha-respaldo-${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    const meses=Object.keys(data).length;
+    const meses=Object.keys(appData).length;
     toast(`✅ Respaldo descargado — ${meses} mes(es)`);
   } catch(e){ toast('⚠️ Error al exportar: '+e.message); }
 }
@@ -764,11 +765,11 @@ function importarDatos(event){
       let mesesNuevos=0, mesesAct=0;
       for(const [mk,md] of Object.entries(remoto)){
         if(typeof md!=='object'||!md.ingresos) continue;
-        if(data[mk]) mesesAct++; else mesesNuevos++;
-        if(!data[mk]) data[mk]={ingresos:{},egresos:[]};
-        Object.assign(data[mk].ingresos, md.ingresos||{});
-        const existIds=new Set(data[mk].egresos.map(eg=>eg.id));
-        for(const eg of (md.egresos||[])) if(!existIds.has(eg.id)) data[mk].egresos.push(eg);
+        if(appData[mk]) mesesAct++; else mesesNuevos++;
+        if(!appData[mk]) appData[mk]={ingresos:{},egresos:[]};
+        Object.assign(appData[mk].ingresos, md.ingresos||{});
+        const existIds=new Set(appData[mk].egresos.map(eg=>eg.id));
+        for(const eg of (md.egresos||[])) if(!existIds.has(eg.id)) appData[mk].egresos.push(eg);
       }
       guardarDatos(); renderAll(); actualizarStatsDatos();
       status.innerHTML=`<div style="background:#0a2e1a;border:1px solid #1a4a2a;border-radius:8px;padding:14px;margin-top:8px;"><div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.1em;color:#4caf50;margin-bottom:6px;">✅ IMPORTACIÓN EXITOSA</div><div style="font-size:.8rem;color:var(--grisT);line-height:1.8;">Meses nuevos: <strong style="color:var(--blanco);">${mesesNuevos}</strong><br>Meses actualizados: <strong style="color:var(--blanco);">${mesesAct}</strong></div></div>`;
@@ -781,15 +782,15 @@ function importarDatos(event){
 function borrarTodo(){
   if(!confirm('⚠️ ¿Borrar TODOS los datos de MI LANCHA?\n\nEsta acción no se puede deshacer.')) return;
   if(!confirm('🚨 ¿Exportaste un respaldo primero?\n\nToca Cancelar para exportar, o Aceptar para borrar.')) return;
-  data={};
+  appData={};
   guardarDatos(); renderAll(); actualizarStatsDatos();
   toast('🗑 Todos los datos eliminados');
 }
 
 function actualizarStatsDatos(){
-  const meses=Object.keys(data);
+  const meses=Object.keys(appData);
   let registros=0;
-  meses.forEach(mk=>{ const md=data[mk]||{}; registros+=Object.keys(md.ingresos||{}).length+(md.egresos||[]).length; });
+  meses.forEach(mk=>{ const md=appData[mk]||{}; registros+=Object.keys(md.ingresos||{}).length+(md.egresos||[]).length; });
   const em=document.getElementById('dat-meses'); const er=document.getElementById('dat-registros');
   if(em) em.textContent=meses.length; if(er) er.textContent=registros;
 }
